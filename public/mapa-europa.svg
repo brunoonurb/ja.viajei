@@ -1,0 +1,16 @@
+<svg width="800" height="600" viewBox="0 0 800 600" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Fundo -->
+  <rect width="800" height="600" fill="#f0f9ff"/>
+  
+  <!-- Contorno da Europa (simplificado) -->
+  <path d="M100 200 L150 150 L200 160 L250 140 L300 120 L350 130 L400 110 L450 120 L500 100 L550 110 L600 90 L650 100 L700 80 L750 90 L750 150 L700 160 L650 150 L600 170 L550 160 L500 180 L450 170 L400 190 L350 180 L300 200 L250 190 L200 210 L150 200 L100 220 Z" 
+        fill="#e0f2fe" stroke="#0ea5e9" stroke-width="2"/>
+  
+  <!-- Países principais -->
+  <path d="M200 200 L250 190 L300 200 L350 190 L400 200 L450 190 L500 200 L550 190 L600 200 L650 190 L700 200 L700 250 L650 240 L600 250 L550 240 L500 250 L450 240 L400 250 L350 240 L300 250 L250 240 L200 250 Z" 
+        fill="#bae6fd" stroke="#0ea5e9" stroke-width="1"/>
+  
+  <!-- Texto -->
+  <text x="400" y="50" text-anchor="middle" font-family="Arial" font-size="24" fill="#1e40af" font-weight="bold">Mapa da Europa</text>
+  <text x="400" y="550" text-anchor="middle" font-family="Arial" font-size="14" fill="#64748b">Clique nos pontos para ver fotos de cada cidade</text>
+</svg>

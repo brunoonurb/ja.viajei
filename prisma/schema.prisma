@@ -1,0 +1,87 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String?
+  role      String   @default("user")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relacionamentos
+  photos Photo[]
+  posts  Post[]
+
+  @@map("users")
+}
+
+model Photo {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  city        String
+  country     String
+  imageData   String // Base64 da imagem
+  imageType   String // Tipo da imagem (jpeg, png, etc)
+  latitude    Float?
+  longitude   Float?
+  takenAt     DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relacionamentos
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  postId String?
+  post   Post?   @relation(fields: [postId], references: [id], onDelete: SetNull)
+
+  @@map("photos")
+}
+
+model Post {
+  id        String   @id @default(cuid())
+  title     String
+  content   String
+  city      String
+  country   String
+  published Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relacionamentos
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  photos Photo[]
+
+  @@map("posts")
+}
+
+model TravelRoute {
+  id        String    @id @default(cuid())
+  city      String
+  country   String
+  transport String // plane, train, car
+  order     Int
+  latitude  Float?
+  longitude Float?
+  visited   Boolean   @default(false)
+  visitedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@unique([city, order], name: "city_order")
+  @@map("travel_routes")
+}
