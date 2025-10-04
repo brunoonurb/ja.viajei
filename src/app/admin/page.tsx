@@ -133,15 +133,6 @@ export default function AdminPage() {
               )}
             </button>
           </form>
-
-          {/* Credenciais de teste */}
-          <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-            <h3 className="text-sm font-medium text-gray-700 mb-2">Credenciais de teste:</h3>
-            <div className="text-sm text-gray-600 space-y-1">
-              <p><strong>Email:</strong> admin@viagem.com</p>
-              <p><strong>Senha:</strong> viagem2024</p>
-            </div>
-          </div>
         </div>
 
         {/* Features */}
