@@ -1054,11 +1054,6 @@ export default function ViagemPage() {
               </button>
             </form>
             
-            <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-              <p className="text-sm text-gray-600 text-center">
-                <strong>Credenciais:</strong> admin@viagem.com / viagem2024
-              </p>
-            </div>
           </div>
         </div>
       )}
