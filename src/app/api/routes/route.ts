@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma'
 // Lista padrão de rotas (mesma do seed)
 const defaultRoutes = [
   { city: 'Brasil', country: 'Brasil', transport: 'plane', order: 1 },
-  { city: 'Reino Unido', country: 'Reino Unido', transport: 'plane', order: 2 },
+  { city: 'Londres', country: 'Reino Unido', transport: 'plane', order: 2 },
   { city: 'Escócia', country: 'Reino Unido', transport: 'train', order: 3 },
   { city: 'Londres', country: 'Reino Unido', transport: 'train', order: 4 },
   { city: 'Paris', country: 'França', transport: 'plane', order: 5 },
