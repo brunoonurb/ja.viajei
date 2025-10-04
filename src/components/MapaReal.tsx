@@ -143,7 +143,7 @@ function MapController({
   }, [map, onMapReady]);
 
   useEffect(() => {
-    if (routes.length > 0) {
+    if (Array.isArray(routes) && routes.length > 0) {
       const bounds = routes
         .map((route) => cityCoordinates[route.city])
         .filter((coord) => coord)
@@ -169,6 +169,8 @@ function MapController({
 
 // Componente para as linhas da rota
 function RouteLines({ routes }: { routes: TravelRoute[] }) {
+  if (!Array.isArray(routes)) return null;
+  
   const sortedRoutes = [...routes].sort((a, b) => a.order - b.order);
 
   const routePoints = sortedRoutes
@@ -207,15 +209,15 @@ export default function MapaReal(props: MapaRealProps) {
   const [mapInstance, setMapInstance] = useState<L.Map | null>(null);
 
   const getCityPhotos = (city: string) => {
-    return photos.filter(
+    return Array.isArray(photos) ? photos.filter(
       (photo) => photo.city.toLowerCase() === city.toLowerCase()
-    );
+    ) : [];
   };
 
   const getCountryPhotos = (country: string) => {
-    return photos.filter(
+    return Array.isArray(photos) ? photos.filter(
       (photo) => photo.country.toLowerCase() === country.toLowerCase()
-    );
+    ) : [];
   };
 
   const handleMapReady = (map: L.Map) => {
@@ -289,13 +291,13 @@ export default function MapaReal(props: MapaRealProps) {
   }, [photos]);
 
   // Agrupar cidades por país
-  const routesByCountry = routes.reduce((acc, route) => {
+  const routesByCountry = Array.isArray(routes) ? routes.reduce((acc, route) => {
     if (!acc[route.country]) {
       acc[route.country] = [];
     }
     acc[route.country].push(route);
     return acc;
-  }, {} as Record<string, TravelRoute[]>);
+  }, {} as Record<string, TravelRoute[]>) : {};
 
   return (
     <div className="bg-white rounded-xl shadow-lg overflow-hidden">
@@ -346,7 +348,7 @@ export default function MapaReal(props: MapaRealProps) {
             <RouteLines routes={routes} />
 
             {/* Marcadores das cidades */}
-            {routes.map((route) => {
+            {Array.isArray(routes) ? routes.map((route) => {
               const coords = cityCoordinates[route.city];
               if (!coords) return null;
 
@@ -433,7 +435,7 @@ export default function MapaReal(props: MapaRealProps) {
                   </Popup>
                 </Marker>
               );
-            })}
+            }) : null}
           </MapContainer>
         </div>
 

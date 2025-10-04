@@ -70,28 +70,28 @@ export default function Home() {
   }
 
   // Agrupar cidades por país
-  const routesByCountry = routes.reduce((acc, route) => {
+  const routesByCountry = Array.isArray(routes) ? routes.reduce((acc, route) => {
     if (!acc[route.country]) {
       acc[route.country] = []
     }
     acc[route.country].push(route)
     return acc
-  }, {} as Record<string, TravelRoute[]>)
+  }, {} as Record<string, TravelRoute[]>) : {}
 
   // Contar fotos por país
   const getCountryPhotos = (country: string) => {
-    return photos.filter(photo => photo.country.toLowerCase() === country.toLowerCase())
+    return Array.isArray(photos) ? photos.filter(photo => photo.country.toLowerCase() === country.toLowerCase()) : []
   }
 
   // Contar fotos por transporte
   const getTransportCount = (transport: string) => {
-    return routes.filter(route => route.transport === transport).length
+    return Array.isArray(routes) ? routes.filter(route => route.transport === transport).length : 0
   }
   const stats = [
-    { icon: MapPin, value: routes.length.toString(), label: 'Cidades', color: 'text-blue-600' },
+    { icon: MapPin, value: Array.isArray(routes) ? routes.length.toString() : '0', label: 'Cidades', color: 'text-blue-600' },
     { icon: Globe, value: Object.keys(routesByCountry).length.toString(), label: 'Países', color: 'text-purple-600' },
     { icon: Users, value: '5', label: 'Aventureiros', color: 'text-pink-600' },
-    { icon: Camera, value: photos.length.toString(), label: 'Memórias', color: 'text-green-600' }
+    { icon: Camera, value: Array.isArray(photos) ? photos.length.toString() : '0', label: 'Memórias', color: 'text-green-600' }
   ]
 
   const transportStats = [
@@ -165,18 +165,18 @@ export default function Home() {
             >
               {/* TODO ver tamanho da imagem */}
               <Image
-                src="/BANNER.png"
+                src="/banner_retangular2.png"
                 alt="Banner Já Viajei"
                 width={1200}
                 height={300}
-                className="w-full h-48 object-cover"
+                className="w-full h-65 object-cover"
                 priority
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
               <div className="absolute bottom-4 left-4 text-white">
-                <h2 className="text-2xl md:text-3xl font-bold mb-1">
+                {/* <h2 className="text-2xl md:text-3xl font-bold mb-1">
                   Já Viajei
-                </h2>
+                </h2> */}
                 <p className="text-sm md:text-base opacity-90">
                   Acompanhe nossa aventura europeia
                 </p>
@@ -310,7 +310,7 @@ export default function Home() {
                 Nossa Rota Completa
               </h3>
               <p className="text-gray-600 max-w-2xl mx-auto">
-                Do Brasil à Europa, explorando {routes.length} cidades em {Object.keys(routesByCountry).length} países
+                Do Brasil à Europa, explorando {Array.isArray(routes) ? routes.length : 0} cidades em {Object.keys(routesByCountry).length} países
               </p>
             </motion.div>
 

@@ -142,7 +142,7 @@ export default function ViagemPage() {
       city: '', 
       country: '', 
       transport: 'car', 
-      order: routes.length + 1 
+      order: Array.isArray(routes) ? routes.length + 1 : 1 
     })
   }
 
@@ -336,7 +336,7 @@ export default function ViagemPage() {
             title: file.name.split('.')[0],
             description: `Foto de ${city}`,
             city: city,
-            country: routes.find(r => r.city === city)?.country || '',
+            country: Array.isArray(routes) ? routes.find(r => r.city === city)?.country || '' : '',
             imageData: base64,
             imageType
           })
@@ -389,7 +389,7 @@ export default function ViagemPage() {
 
       if (response.ok) {
         const updatedPhoto = await response.json()
-        setPhotos(photos.map(p => p.id === id ? updatedPhoto : p))
+        setPhotos(Array.isArray(photos) ? photos.map(p => p.id === id ? updatedPhoto : p) : [])
         setEditingPhoto(null)
       }
     } catch (error) {
@@ -407,7 +407,7 @@ export default function ViagemPage() {
       })
 
       if (response.ok) {
-        setPhotos(photos.filter(p => p.id !== id))
+        setPhotos(Array.isArray(photos) ? photos.filter(p => p.id !== id) : [])
       }
     } catch (error) {
       console.error('Erro ao excluir:', error)
@@ -445,7 +445,7 @@ export default function ViagemPage() {
                 height={32}
                 className="rounded-lg"
               />
-              <div>
+             <div className="hidden sm:block">
                 <h1 className="text-xl font-bold gradient-text">
                   Já Viajei
                 </h1>
@@ -538,7 +538,7 @@ export default function ViagemPage() {
               Memórias da Viagem
             </h3>
 
-          {photos.length === 0 ? (
+          {!Array.isArray(photos) || photos.length === 0 ? (
             <div className="text-center py-16 bg-white rounded-xl shadow-lg">
               <Camera className="h-16 w-16 text-gray-300 mx-auto mb-4" />
               <p className="text-gray-500 text-lg">Nenhuma foto adicionada ainda</p>
@@ -606,9 +606,9 @@ export default function ViagemPage() {
                               list="city-suggestions"
                             />
                             <datalist id="city-suggestions">
-                              {Array.from(new Set(routes.map(route => route.city))).map(city => (
+                              {Array.isArray(routes) ? Array.from(new Set(routes.map(route => route.city))).map(city => (
                                 <option key={city} value={city} />
-                              ))}
+                              )) : null}
                             </datalist>
                           </div>
                           <div className="relative">
@@ -621,9 +621,9 @@ export default function ViagemPage() {
                               list="country-suggestions"
                             />
                             <datalist id="country-suggestions">
-                              {Array.from(new Set(routes.map(route => route.country))).map(country => (
+                              {Array.isArray(routes) ? Array.from(new Set(routes.map(route => route.country))).map(country => (
                                 <option key={country} value={country} />
-                              ))}
+                              )) : null}
                             </datalist>
                           </div>
                           <textarea
@@ -843,9 +843,9 @@ export default function ViagemPage() {
                     list="upload-city-suggestions"
                   />
                   <datalist id="upload-city-suggestions">
-                    {Array.from(new Set(routes.map(route => route.city))).map(city => (
+                    {Array.isArray(routes) ? Array.from(new Set(routes.map(route => route.city))).map(city => (
                       <option key={city} value={city} />
-                    ))}
+                    )) : null}
                   </datalist>
                 </div>
 
@@ -862,9 +862,9 @@ export default function ViagemPage() {
                     list="upload-country-suggestions"
                   />
                   <datalist id="upload-country-suggestions">
-                    {Array.from(new Set(routes.map(route => route.country))).map(country => (
+                    {Array.isArray(routes) ? Array.from(new Set(routes.map(route => route.country))).map(country => (
                       <option key={country} value={country} />
-                    ))}
+                    )) : null}
                   </datalist>
                 </div>
               </div>

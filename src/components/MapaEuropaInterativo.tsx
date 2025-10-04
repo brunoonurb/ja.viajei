@@ -104,7 +104,7 @@ export default function MapaEuropaInterativo({ routes, photos, isAuthenticated, 
   const mapRef = useRef<HTMLDivElement>(null)
 
   const getCityPhotos = (city: string) => {
-    return photos.filter(photo => photo.city.toLowerCase() === city.toLowerCase())
+    return Array.isArray(photos) ? photos.filter(photo => photo.city.toLowerCase() === city.toLowerCase()) : []
   }
 
   const handleCityClick = (route: TravelRoute) => {
@@ -157,14 +157,14 @@ export default function MapaEuropaInterativo({ routes, photos, isAuthenticated, 
   }
 
   // Agrupar cidades por país para mostrar a ordem
-  const routesByCountry = routes.reduce((acc, route) => {
+  const routesByCountry = Array.isArray(routes) ? routes.reduce((acc, route) => {
     const country = cityCoordinates[route.city]?.country || route.country
     if (!acc[country]) {
       acc[country] = []
     }
     acc[country].push(route)
     return acc
-  }, {} as Record<string, TravelRoute[]>)
+  }, {} as Record<string, TravelRoute[]>) : {}
 
   return (
     <div className="bg-white rounded-xl shadow-lg overflow-hidden">
@@ -261,7 +261,7 @@ export default function MapaEuropaInterativo({ routes, photos, isAuthenticated, 
             </svg>
             
             {/* Pontos das cidades */}
-            {routes.map((route) => {
+            {Array.isArray(routes) ? routes.map((route) => {
               const coords = cityCoordinates[route.city]
               if (!coords) return null
               
@@ -310,7 +310,7 @@ export default function MapaEuropaInterativo({ routes, photos, isAuthenticated, 
                   </div>
                 </motion.button>
               )
-            })}
+            }) : null}
           </div>
         </div>
 
