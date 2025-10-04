@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { geocodeAddress, geocodeCity } from '@/lib/geocoding'
 
 // Lista padrão de rotas (mesma do seed)
 const defaultRoutes = [
@@ -57,10 +58,55 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { city, country, transport, order, visited = false } = body
+    const { 
+      city, 
+      country, 
+      transport, 
+      order, 
+      visited = false,
+      address, // Novo campo para endereço completo
+      latitude, // Coordenadas opcionais
+      longitude
+    } = body
 
     if (!city || !country || !transport) {
       return NextResponse.json({ error: 'Cidade, país e transporte são obrigatórios' }, { status: 400 })
+    }
+
+    let finalLatitude = latitude
+    let finalLongitude = longitude
+
+    // Se não foram fornecidas coordenadas, tentar geocodificação
+    if (!finalLatitude || !finalLongitude) {
+      try {
+        // Tentar com endereço completo primeiro, depois com cidade + país
+        const searchQuery = address || `${city}, ${country}`
+        const geocodingResult = await geocodeAddress(searchQuery)
+        
+        if ('error' in geocodingResult) {
+          // Se falhar com endereço completo, tentar apenas cidade + país
+          const cityResult = await geocodeCity(city, country)
+          
+          if ('error' in cityResult) {
+            return NextResponse.json({ 
+              error: 'Geocodificação falhou', 
+              details: cityResult.message 
+            }, { status: 400 })
+          }
+          
+          finalLatitude = cityResult.lat
+          finalLongitude = cityResult.lng
+        } else {
+          finalLatitude = geocodingResult.lat
+          finalLongitude = geocodingResult.lng
+        }
+      } catch (geocodingError) {
+        console.error('Erro na geocodificação:', geocodingError)
+        return NextResponse.json({ 
+          error: 'Erro na geocodificação', 
+          details: 'Não foi possível obter as coordenadas do endereço' 
+        }, { status: 400 })
+      }
     }
 
     const newRoute = await prisma.travelRoute.create({
@@ -69,7 +115,9 @@ export async function POST(request: Request) {
         country,
         transport,
         order: order || 1,
-        visited
+        visited,
+        latitude: finalLatitude,
+        longitude: finalLongitude
       }
     })
 

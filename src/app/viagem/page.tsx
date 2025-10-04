@@ -62,7 +62,13 @@ export default function ViagemPage() {
   const [uploadData, setUploadData] = useState({ title: '', description: '', city: '', country: '', takenAt: '' })
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [showAddCityModal, setShowAddCityModal] = useState(false)
-  const [newCityData, setNewCityData] = useState({ city: '', country: '', transport: 'car' as 'plane' | 'train' | 'car', order: 0 })
+  const [newCityData, setNewCityData] = useState({ 
+    city: '', 
+    country: '', 
+    transport: 'car' as 'plane' | 'train' | 'car', 
+    order: 0,
+    address: '' // Novo campo para endereço completo
+  })
 
   // Carregar dados
   useEffect(() => {
@@ -142,13 +148,14 @@ export default function ViagemPage() {
       city: '', 
       country: '', 
       transport: 'car', 
-      order: Array.isArray(routes) ? routes.length + 1 : 1 
+      order: Array.isArray(routes) ? routes.length + 1 : 1,
+      address: ''
     })
   }
 
   const closeAddCityModal = () => {
     setShowAddCityModal(false)
-    setNewCityData({ city: '', country: '', transport: 'car', order: 0 })
+    setNewCityData({ city: '', country: '', transport: 'car', order: 0, address: '' })
   }
 
   const handleAddCity = async () => {
@@ -166,7 +173,8 @@ export default function ViagemPage() {
           country: newCityData.country,
           transport: newCityData.transport,
           order: newCityData.order,
-          visited: false
+          visited: false,
+          address: newCityData.address // Incluir endereço completo
         })
       })
 
@@ -176,7 +184,8 @@ export default function ViagemPage() {
         closeAddCityModal()
         alert('Cidade adicionada com sucesso!')
       } else {
-        alert('Erro ao adicionar cidade')
+        const errorData = await response.json()
+        alert(`Erro ao adicionar cidade: ${errorData.details || errorData.error}`)
       }
     } catch (error) {
       console.error('Erro ao adicionar cidade:', error)
@@ -927,7 +936,23 @@ export default function ViagemPage() {
             <div className="p-6 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Cidade
+                  Endereço Completo (Opcional)
+                </label>
+                <input
+                  type="text"
+                  value={newCityData.address}
+                  onChange={(e) => setNewCityData({...newCityData, address: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Ex: Rua das Flores, 123, Centro, São Paulo, SP, Brasil"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  💡 Use endereço completo para localização mais precisa
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Cidade *
                 </label>
                 <input
                   type="text"
@@ -935,12 +960,13 @@ export default function ViagemPage() {
                   onChange={(e) => setNewCityData({...newCityData, city: e.target.value})}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Nome da cidade"
+                  required
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  País
+                  País *
                 </label>
                 <input
                   type="text"
@@ -948,6 +974,7 @@ export default function ViagemPage() {
                   onChange={(e) => setNewCityData({...newCityData, country: e.target.value})}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Nome do país"
+                  required
                 />
               </div>
 

@@ -144,21 +144,42 @@ function MapController({
 
   useEffect(() => {
     if (Array.isArray(routes) && routes.length > 0) {
+      // Usar coordenadas das rotas se disponíveis, senão usar mapeamento estático
       const bounds = routes
-        .map((route) => cityCoordinates[route.city])
-        .filter((coord) => coord)
-        .map((coord) => [coord.lat, coord.lng] as [number, number]);
+        .map((route) => {
+          // Priorizar coordenadas do banco de dados
+          if (route.latitude && route.longitude) {
+            return [route.latitude, route.longitude] as [number, number];
+          }
+          // Fallback para mapeamento estático
+          const staticCoords = cityCoordinates[route.city];
+          return staticCoords ? [staticCoords.lat, staticCoords.lng] as [number, number] : null;
+        })
+        .filter((coord) => coord !== null);
 
       if (bounds.length > 0) {
-        // Focar na Europa com bounds específicos para mostrar melhor a região
+        // Se temos coordenadas reais, ajustar o mapa para elas
+        if (bounds.length === 1) {
+          // Para uma única coordenada, centralizar nela
+          map.setView(bounds[0] as [number, number], 8);
+        } else {
+          // Para múltiplas coordenadas, ajustar bounds
+          const boundsArray = bounds as [number, number][];
+          map.fitBounds(boundsArray, {
+            padding: [30, 30],
+            maxZoom: 10,
+          });
+        }
+      } else {
+        // Fallback para Europa se não há coordenadas válidas
         const europeBounds = [
           [35.0, -10.0], // Sudoeste (Portugal/Espanha)
           [70.0, 40.0], // Nordeste (Norte da Europa/Rússia)
         ] as [[number, number], [number, number]];
 
         map.fitBounds(europeBounds, {
-          padding: [30, 30], // Padding adequado para mostrar a Europa
-          maxZoom: 6, // Zoom máximo limitado para manter a Europa visível
+          padding: [30, 30],
+          maxZoom: 6,
         });
       }
     }
@@ -174,15 +195,22 @@ function RouteLines({ routes }: { routes: TravelRoute[] }) {
   const sortedRoutes = [...routes].sort((a, b) => a.order - b.order);
 
   const routePoints = sortedRoutes
-    .map((route) => cityCoordinates[route.city])
-    .filter((coord) => coord)
-    .map((coord) => [coord.lat, coord.lng] as [number, number]);
+    .map((route) => {
+      // Priorizar coordenadas do banco de dados
+      if (route.latitude && route.longitude) {
+        return [route.latitude, route.longitude] as [number, number];
+      }
+      // Fallback para mapeamento estático
+      const staticCoords = cityCoordinates[route.city];
+      return staticCoords ? [staticCoords.lat, staticCoords.lng] as [number, number] : null;
+    })
+    .filter((coord) => coord !== null);
 
   if (routePoints.length < 2) return null;
 
   return (
     <Polyline
-      positions={routePoints}
+      positions={routePoints as [number, number][]}
       pathOptions={{
         color: "#3b82f6",
         weight: 3,
@@ -349,7 +377,15 @@ export default function MapaReal(props: MapaRealProps) {
 
             {/* Marcadores das cidades */}
             {Array.isArray(routes) ? routes.map((route) => {
-              const coords = cityCoordinates[route.city];
+              // Priorizar coordenadas do banco de dados
+              let coords = null;
+              if (route.latitude && route.longitude) {
+                coords = { lat: route.latitude, lng: route.longitude };
+              } else {
+                // Fallback para mapeamento estático
+                coords = cityCoordinates[route.city];
+              }
+              
               if (!coords) return null;
 
               const countryPhotosCount = getCountryPhotos(route.country).length;
