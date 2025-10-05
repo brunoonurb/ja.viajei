@@ -167,7 +167,7 @@ function MapController({
           const boundsArray = bounds as [number, number][];
           map.fitBounds(boundsArray, {
             padding: [30, 30],
-            maxZoom: 10,
+            maxZoom: 50,
           });
         }
       } else {
@@ -179,7 +179,7 @@ function MapController({
 
         map.fitBounds(europeBounds, {
           padding: [30, 30],
-          maxZoom: 6,
+          maxZoom: 50,
         });
       }
     }
@@ -363,7 +363,7 @@ export default function MapaReal(props: MapaRealProps) {
             scrollWheelZoom={true}
             zoomControl={true}
             minZoom={3}
-            maxZoom={10}
+            maxZoom={50}
           >
             <TileLayer
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'

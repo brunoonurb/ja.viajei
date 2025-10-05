@@ -17,6 +17,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { compressPhotoForTravel } from '@/lib/imageCompression'
 
 interface Photo {
   id: string
@@ -75,35 +76,69 @@ export default function AdminDashboard() {
     const file = event.target.files?.[0]
     if (!file) return
 
-    const reader = new FileReader()
-    reader.onload = async (e) => {
-      const base64 = e.target?.result as string
-      const imageType = file.type
+    try {
+      // Comprime a imagem antes do upload
+      const compressedBase64 = await compressPhotoForTravel(file)
+      const originalSize = (file.size / 1024).toFixed(1)
+      const compressedSize = (compressedBase64.length * 0.75 / 1024).toFixed(1)
+      
+      console.log(`📸 Upload Admin: ${file.name}`)
+      console.log(`📏 Tamanho original: ${originalSize}KB`)
+      console.log(`🗜️ Tamanho comprimido: ${compressedSize}KB`)
+      console.log(`💾 Redução: ${((1 - (parseFloat(compressedSize) / parseFloat(originalSize))) * 100).toFixed(1)}%`)
 
-      try {
-        const response = await fetch('/api/photos', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            title: file.name.split('.')[0],
-            description: '',
-            city: '',
-            country: '',
-            imageData: base64,
-            imageType
-          })
+      const response = await fetch('/api/photos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: file.name.split('.')[0],
+          description: '',
+          city: '',
+          country: '',
+          imageData: compressedBase64,
+          imageType: file.type
         })
+      })
 
-        if (response.ok) {
-          const newPhoto = await response.json()
-          setPhotos([newPhoto, ...photos])
-          setShowAddPhoto(false)
-        }
-      } catch (error) {
-        console.error('Erro ao fazer upload:', error)
+      if (response.ok) {
+        const newPhoto = await response.json()
+        setPhotos([newPhoto, ...photos])
+        setShowAddPhoto(false)
       }
+    } catch (error) {
+      console.error('Erro ao fazer upload:', error)
+      
+      // Fallback: usa o método original se a compressão falhar
+      const reader = new FileReader()
+      reader.onload = async (e) => {
+        const base64 = e.target?.result as string
+        const imageType = file.type
+
+        try {
+          const response = await fetch('/api/photos', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              title: file.name.split('.')[0],
+              description: '',
+              city: '',
+              country: '',
+              imageData: base64,
+              imageType
+            })
+          })
+
+          if (response.ok) {
+            const newPhoto = await response.json()
+            setPhotos([newPhoto, ...photos])
+            setShowAddPhoto(false)
+          }
+        } catch (fallbackError) {
+          console.error('Erro no fallback:', fallbackError)
+        }
+      }
+      reader.readAsDataURL(file)
     }
-    reader.readAsDataURL(file)
   }
 
   const handleEditPhoto = (photo: Photo) => {

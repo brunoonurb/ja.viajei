@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
         country,
         imageData,
         imageType,
-        userId: 'cmgbncb7h0000h6xbd13uusbv' // Admin user ID
+        userId: 'cmgci4q9m0000h6r2d16b1ibo' // Admin user ID
       }
     })
 

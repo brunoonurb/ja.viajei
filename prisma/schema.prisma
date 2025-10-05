@@ -32,7 +32,7 @@ model Photo {
   description String?
   city        String
   country     String
-  imageData   String // Base64 da imagem
+  imageData   String?  @db.Text // Base64 da imagem
   imageType   String // Tipo da imagem (jpeg, png, etc)
   latitude    Float?
   longitude   Float?

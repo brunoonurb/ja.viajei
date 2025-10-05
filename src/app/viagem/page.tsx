@@ -18,11 +18,18 @@ import {
   X,
   Lock,
   LogIn,
-  Calendar
+  Calendar,
+  Pencil,
+  Trash,
+  ChevronDown,
+  ChevronRight
 } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import MapaWrapper from '@/components/MapaWrapper'
+import CountryAutocomplete from '@/components/CountryAutocomplete'
+import CityAutocomplete from '@/components/CityAutocomplete'
+import { compressPhotoForTravel } from '@/lib/imageCompression'
 
 interface Photo {
   id: string
@@ -69,6 +76,17 @@ export default function ViagemPage() {
     order: 0,
     address: '' // Novo campo para endereço completo
   })
+  const [showEditCityModal, setShowEditCityModal] = useState(false)
+  const [editingCity, setEditingCity] = useState<TravelRoute | null>(null)
+  const [editCityData, setEditCityData] = useState({ 
+    city: '', 
+    country: '', 
+    transport: 'car' as 'plane' | 'train' | 'car', 
+    order: 0,
+    address: '',
+    visited: false
+  })
+  const [isCitiesSectionOpen, setIsCitiesSectionOpen] = useState(false)
 
   // Carregar dados
   useEffect(() => {
@@ -193,6 +211,83 @@ export default function ViagemPage() {
     }
   }
 
+  const openEditCityModal = (city: TravelRoute) => {
+    setEditingCity(city)
+    setEditCityData({
+      city: city.city,
+      country: city.country,
+      transport: city.transport as 'plane' | 'train' | 'car',
+      order: city.order,
+      address: '',
+      visited: city.visited
+    })
+    setShowEditCityModal(true)
+  }
+
+  const closeEditCityModal = () => {
+    setShowEditCityModal(false)
+    setEditingCity(null)
+    setEditCityData({ city: '', country: '', transport: 'car', order: 0, address: '', visited: false })
+  }
+
+  const handleEditCity = async () => {
+    if (!editingCity || !editCityData.city || !editCityData.country) {
+      alert('Por favor, preencha cidade e país')
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/routes/${editingCity.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          city: editCityData.city,
+          country: editCityData.country,
+          transport: editCityData.transport,
+          order: editCityData.order,
+          visited: editCityData.visited,
+          address: editCityData.address
+        })
+      })
+
+      if (response.ok) {
+        const updatedRoute = await response.json()
+        setRoutes(routes.map(route => route.id === editingCity.id ? updatedRoute : route))
+        closeEditCityModal()
+        alert('Cidade editada com sucesso!')
+      } else {
+        const errorData = await response.json()
+        alert(`Erro ao editar cidade: ${errorData.details || errorData.error}`)
+      }
+    } catch (error) {
+      console.error('Erro ao editar cidade:', error)
+      alert('Erro ao editar cidade')
+    }
+  }
+
+  const handleDeleteCity = async (city: TravelRoute) => {
+    if (!confirm(`Tem certeza que deseja deletar ${city.city}, ${city.country}?`)) {
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/routes/${city.id}`, {
+        method: 'DELETE'
+      })
+
+      if (response.ok) {
+        setRoutes(routes.filter(route => route.id !== city.id))
+        alert('Cidade deletada com sucesso!')
+      } else {
+        const errorData = await response.json()
+        alert(`Erro ao deletar cidade: ${errorData.error}`)
+      }
+    } catch (error) {
+      console.error('Erro ao deletar cidade:', error)
+      alert('Erro ao deletar cidade')
+    }
+  }
+
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (file) {
@@ -206,36 +301,71 @@ export default function ViagemPage() {
   const handleUploadWithData = async () => {
     if (!selectedFile) return
 
-    const reader = new FileReader()
-    reader.onload = async (e) => {
-      const base64 = e.target?.result as string
-      const imageType = selectedFile.type
+    try {
+      // Comprime a imagem antes do upload
+      const compressedBase64 = await compressPhotoForTravel(selectedFile)
+      const originalSize = (selectedFile.size / 1024).toFixed(1)
+      const compressedSize = (compressedBase64.length * 0.75 / 1024).toFixed(1)
+      
+      console.log(`📸 Upload: ${selectedFile.name}`)
+      console.log(`📏 Tamanho original: ${originalSize}KB`)
+      console.log(`🗜️ Tamanho comprimido: ${compressedSize}KB`)
+      console.log(`💾 Redução: ${((1 - (parseFloat(compressedSize) / parseFloat(originalSize))) * 100).toFixed(1)}%`)
 
-      try {
-        const response = await fetch('/api/photos', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            title: uploadData.title,
-            description: uploadData.description,
-            city: uploadData.city,
-            country: uploadData.country,
-            imageData: base64,
-            imageType,
-            takenAt: new Date(uploadData.takenAt).toISOString()
-          })
+      const response = await fetch('/api/photos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: uploadData.title,
+          description: uploadData.description,
+          city: uploadData.city,
+          country: uploadData.country,
+          imageData: compressedBase64,
+          imageType: selectedFile.type,
+          takenAt: new Date(uploadData.takenAt).toISOString()
         })
+      })
 
-        if (response.ok) {
-          const newPhoto = await response.json()
-          setPhotos([newPhoto, ...photos])
-          closeUploadModal()
-        }
-      } catch (error) {
-        console.error('Erro ao fazer upload:', error)
+      if (response.ok) {
+        const newPhoto = await response.json()
+        setPhotos([newPhoto, ...photos])
+        closeUploadModal()
       }
+    } catch (error) {
+      console.error('Erro ao fazer upload:', error)
+      
+      // Fallback: usa o método original se a compressão falhar
+      const reader = new FileReader()
+      reader.onload = async (e) => {
+        const base64 = e.target?.result as string
+        const imageType = selectedFile.type
+
+        try {
+          const response = await fetch('/api/photos', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              title: uploadData.title,
+              description: uploadData.description,
+              city: uploadData.city,
+              country: uploadData.country,
+              imageData: base64,
+              imageType,
+              takenAt: new Date(uploadData.takenAt).toISOString()
+            })
+          })
+
+          if (response.ok) {
+            const newPhoto = await response.json()
+            setPhotos([newPhoto, ...photos])
+            closeUploadModal()
+          }
+        } catch (fallbackError) {
+          console.error('Erro no fallback:', fallbackError)
+        }
+      }
+      reader.readAsDataURL(selectedFile)
     }
-    reader.readAsDataURL(selectedFile)
   }
 
   const handleImageClick = (photo: Photo, photosArray?: Photo[]) => {
@@ -332,43 +462,84 @@ export default function ViagemPage() {
   }
 
   const handlePhotoUploadByCity = async (file: File, city: string) => {
-    const reader = new FileReader()
-    reader.onload = async (e) => {
-      const base64 = e.target?.result as string
-      const imageType = file.type
+    try {
+      // Comprime a imagem antes do upload
+      const compressedBase64 = await compressPhotoForTravel(file)
+      const originalSize = (file.size / 1024).toFixed(1)
+      const compressedSize = (compressedBase64.length * 0.75 / 1024).toFixed(1)
+      
+      console.log(`📸 Upload: ${file.name}`)
+      console.log(`📏 Tamanho original: ${originalSize}KB`)
+      console.log(`🗜️ Tamanho comprimido: ${compressedSize}KB`)
+      console.log(`💾 Redução: ${((1 - (parseFloat(compressedSize) / parseFloat(originalSize))) * 100).toFixed(1)}%`)
 
-      try {
-        const response = await fetch('/api/photos', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            title: file.name.split('.')[0],
-            description: `Foto de ${city}`,
-            city: city,
-            country: Array.isArray(routes) ? routes.find(r => r.city === city)?.country || '' : '',
-            imageData: base64,
-            imageType
-          })
+      const response = await fetch('/api/photos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: file.name.split('.')[0],
+          description: `Foto de ${city}`,
+          city: city,
+          country: Array.isArray(routes) ? routes.find(r => r.city === city)?.country || '' : '',
+          imageData: compressedBase64,
+          imageType: file.type
         })
+      })
 
-        if (response.ok) {
-          const newPhoto = await response.json()
-          setPhotos([newPhoto, ...photos])
-          // Entrar automaticamente no modo de edição
-          setEditingPhoto(newPhoto.id)
-          setEditData({
-            title: newPhoto.title,
-            description: newPhoto.description || '',
-            city: newPhoto.city,
-            country: newPhoto.country,
-            takenAt: newPhoto.takenAt ? new Date(newPhoto.takenAt).toISOString().split('T')[0] : ''
-          })
-        }
-      } catch (error) {
-        console.error('Erro ao fazer upload:', error)
+      if (response.ok) {
+        const newPhoto = await response.json()
+        setPhotos([newPhoto, ...photos])
+        // Entrar automaticamente no modo de edição
+        setEditingPhoto(newPhoto.id)
+        setEditData({
+          title: newPhoto.title,
+          description: newPhoto.description || '',
+          city: newPhoto.city,
+          country: newPhoto.country,
+          takenAt: newPhoto.takenAt ? new Date(newPhoto.takenAt).toISOString().split('T')[0] : ''
+        })
       }
+    } catch (error) {
+      console.error('Erro ao fazer upload:', error)
+      
+      // Fallback: usa o método original se a compressão falhar
+      const reader = new FileReader()
+      reader.onload = async (e) => {
+        const base64 = e.target?.result as string
+        const imageType = file.type
+
+        try {
+          const response = await fetch('/api/photos', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              title: file.name.split('.')[0],
+              description: `Foto de ${city}`,
+              city: city,
+              country: Array.isArray(routes) ? routes.find(r => r.city === city)?.country || '' : '',
+              imageData: base64,
+              imageType
+            })
+          })
+
+          if (response.ok) {
+            const newPhoto = await response.json()
+            setPhotos([newPhoto, ...photos])
+            setEditingPhoto(newPhoto.id)
+            setEditData({
+              title: newPhoto.title,
+              description: newPhoto.description || '',
+              city: newPhoto.city,
+              country: newPhoto.country,
+              takenAt: newPhoto.takenAt ? new Date(newPhoto.takenAt).toISOString().split('T')[0] : ''
+            })
+          }
+        } catch (fallbackError) {
+          console.error('Erro no fallback:', fallbackError)
+        }
+      }
+      reader.readAsDataURL(file)
     }
-    reader.readAsDataURL(file)
   }
 
   const handleEditPhoto = (photo: Photo) => {
@@ -535,6 +706,139 @@ export default function ViagemPage() {
             onAddCity={openAddCityModal}
           />
         </motion.section>
+
+        {/* Lista de Cidades - Apenas para usuários autenticados */}
+        {isAuthenticated && (
+          <motion.section
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.3 }}
+            className="mb-16"
+          >
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <div 
+                className="flex justify-between items-center mb-6 cursor-pointer"
+                onClick={() => setIsCitiesSectionOpen(!isCitiesSectionOpen)}
+              >
+                <div className="flex items-center space-x-3">
+                  <h3 className="text-2xl md:text-3xl font-bold text-gray-800">
+                    Cidades da Viagem
+                  </h3>
+                  <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                    {Array.isArray(routes) ? routes.length : 0} cidades
+                  </span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  {isCitiesSectionOpen && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        openAddCityModal()
+                      }}
+                      className="btn-primary inline-flex items-center space-x-2"
+                    >
+                      <Plus className="h-4 w-4" />
+                      <span>Adicionar</span>
+                    </button>
+                  )}
+                  <div className="text-gray-400">
+                    {isCitiesSectionOpen ? (
+                      <ChevronDown className="h-6 w-6" />
+                    ) : (
+                      <ChevronRight className="h-6 w-6" />
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Conteúdo da lista com animação de collapse */}
+              <motion.div
+                initial={false}
+                animate={{
+                  height: isCitiesSectionOpen ? 'auto' : 0,
+                  opacity: isCitiesSectionOpen ? 1 : 0
+                }}
+                transition={{ duration: 0.3, ease: 'easeInOut' }}
+                className="overflow-hidden"
+              >
+                <div className="pt-4">
+                  {Array.isArray(routes) && routes.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {routes
+                  .sort((a, b) => a.order - b.order)
+                  .map((route) => (
+                    <div
+                      key={route.id}
+                      className={`bg-white rounded-lg shadow-md p-4 border-l-4 ${
+                        route.visited 
+                          ? 'border-green-500 bg-green-50' 
+                          : 'border-blue-500 bg-blue-50'
+                      }`}
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-gray-800">{route.city}</h4>
+                          <p className="text-sm text-gray-600">{route.country}</p>
+                        </div>
+                        <div className="flex space-x-1">
+                          <button
+                            onClick={() => openEditCityModal(route)}
+                            className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
+                            title="Editar cidade"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteCity(route)}
+                            className="p-1 text-gray-400 hover:text-red-600 transition-colors"
+                            title="Deletar cidade"
+                          >
+                            <Trash className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center justify-between text-sm">
+                        <div className="flex items-center space-x-2">
+                          {route.transport === 'plane' && <Plane className="h-4 w-4 text-blue-600" />}
+                          {route.transport === 'train' && <Train className="h-4 w-4 text-green-600" />}
+                          {route.transport === 'car' && <Car className="h-4 w-4 text-purple-600" />}
+                          <span className="capitalize text-gray-600">
+                            {route.transport === 'plane' ? 'Avião' : 
+                             route.transport === 'train' ? 'Trem' : 'Carro'}
+                          </span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <span className="text-xs text-gray-500">#{route.order}</span>
+                          {route.visited && (
+                            <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                              Visitada
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            ) : (
+              <div className="text-center py-16 bg-white rounded-xl shadow-lg">
+                <MapPin className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                <h4 className="text-xl font-semibold text-gray-600 mb-2">Nenhuma cidade adicionada</h4>
+                <p className="text-gray-500 mb-4">Comece adicionando cidades ao seu roteiro</p>
+                <button
+                  onClick={openAddCityModal}
+                  className="btn-primary inline-flex items-center space-x-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span>Adicionar Primeira Cidade</span>
+                </button>
+                  </div>
+                  )}
+                </div>
+              </motion.div>
+            </div>
+          </motion.section>
+        )}
 
         {/* Galeria de Fotos */}
         <motion.section
@@ -843,38 +1147,23 @@ export default function ViagemPage() {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Cidade
                   </label>
-                  <input
-                    type="text"
+                  <CityAutocomplete
                     value={uploadData.city}
-                    onChange={(e) => setUploadData({...uploadData, city: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Cidade"
-                    list="upload-city-suggestions"
+                    onChange={(city) => setUploadData({...uploadData, city})}
+                    country={uploadData.country}
+                    placeholder="Digite o nome da cidade"
                   />
-                  <datalist id="upload-city-suggestions">
-                    {Array.isArray(routes) ? Array.from(new Set(routes.map(route => route.city))).map(city => (
-                      <option key={city} value={city} />
-                    )) : null}
-                  </datalist>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     País
                   </label>
-                  <input
-                    type="text"
+                  <CountryAutocomplete
                     value={uploadData.country}
-                    onChange={(e) => setUploadData({...uploadData, country: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="País"
-                    list="upload-country-suggestions"
+                    onChange={(country) => setUploadData({...uploadData, country})}
+                    placeholder="Digite o nome do país"
                   />
-                  <datalist id="upload-country-suggestions">
-                    {Array.isArray(routes) ? Array.from(new Set(routes.map(route => route.country))).map(country => (
-                      <option key={country} value={country} />
-                    )) : null}
-                  </datalist>
                 </div>
               </div>
 
@@ -954,12 +1243,11 @@ export default function ViagemPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Cidade *
                 </label>
-                <input
-                  type="text"
+                <CityAutocomplete
                   value={newCityData.city}
-                  onChange={(e) => setNewCityData({...newCityData, city: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Nome da cidade"
+                  onChange={(city) => setNewCityData({...newCityData, city})}
+                  country={newCityData.country}
+                  placeholder="Digite o nome da cidade"
                   required
                 />
               </div>
@@ -968,12 +1256,10 @@ export default function ViagemPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   País *
                 </label>
-                <input
-                  type="text"
+                <CountryAutocomplete
                   value={newCityData.country}
-                  onChange={(e) => setNewCityData({...newCityData, country: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Nome do país"
+                  onChange={(country) => setNewCityData({...newCityData, country})}
+                  placeholder="Digite o nome do país"
                   required
                 />
               </div>
@@ -1092,6 +1378,140 @@ export default function ViagemPage() {
               <Heart className="h-6 w-6 text-pink-500" />
               <span className="text-xl font-bold">Bruno & Jessica • Bianca & Leonardo & Theo (5 meses)</span>
             </div>
+            <p className="text-gray-400">
+              Nossa aventura europeia de 2024 - Dois casais, um bebê, uma paixão por viajar!
+            </p>
+        </div>
+      </footer>
+
+      {/* Modal de Editar Cidade */}
+      {showEditCityModal && editingCity && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            className="bg-white rounded-xl max-w-md w-full max-h-[90vh] overflow-y-auto"
+          >
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <h3 className="text-2xl font-bold text-gray-800">Editar Cidade</h3>
+                <button
+                  onClick={closeEditCityModal}
+                  className="text-gray-400 hover:text-gray-600 text-2xl"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Endereço Completo (opcional)
+                </label>
+                <input
+                  type="text"
+                  value={editCityData.address}
+                  onChange={(e) => setEditCityData({...editCityData, address: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Ex: Rua das Flores, 123, Centro"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  💡 Use endereço completo para localização mais precisa
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Cidade *
+                </label>
+                <CityAutocomplete
+                  value={editCityData.city}
+                  onChange={(city) => setEditCityData({...editCityData, city})}
+                  country={editCityData.country}
+                  placeholder="Digite o nome da cidade"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  País *
+                </label>
+                <CountryAutocomplete
+                  value={editCityData.country}
+                  onChange={(country) => setEditCityData({...editCityData, country})}
+                  placeholder="Digite o nome do país"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Meio de Transporte
+                </label>
+                <select
+                  value={editCityData.transport}
+                  onChange={(e) => setEditCityData({...editCityData, transport: e.target.value as 'plane' | 'train' | 'car'})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="plane">✈️ Avião</option>
+                  <option value="train">🚂 Trem</option>
+                  <option value="car">🚗 Carro</option>
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Ordem
+                  </label>
+                  <input
+                    type="number"
+                    value={editCityData.order}
+                    onChange={(e) => setEditCityData({...editCityData, order: parseInt(e.target.value) || 0})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="1"
+                    min="1"
+                  />
+                </div>
+
+                <div className="flex items-center">
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      checked={editCityData.visited}
+                      onChange={(e) => setEditCityData({...editCityData, visited: e.target.checked})}
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span className="text-sm font-medium text-gray-700">Já visitada</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6 border-t border-gray-200 flex space-x-3">
+              <button
+                onClick={closeEditCityModal}
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleEditCity}
+                className="flex-1 btn-primary"
+              >
+                Salvar Alterações
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      <footer className="bg-gray-800 text-white py-12 mt-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h3 className="text-2xl font-bold mb-4">Nossa Viagem pela Europa</h3>
             <p className="text-gray-400">
               Nossa aventura europeia de 2024 - Dois casais, um bebê, uma paixão por viajar!
             </p>
