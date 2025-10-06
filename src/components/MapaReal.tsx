@@ -10,8 +10,7 @@ import {
   Polyline,
 } from "react-leaflet";
 import L from "leaflet";
-import { motion } from "framer-motion";
-import { Camera, Plane, Train, X, MapPin, Calendar, Plus, Maximize2, Minimize2 } from "lucide-react";
+import { Camera, Plane, Train, Plus, Maximize2, Minimize2 } from "lucide-react";
 import Image from "next/image";
 import "leaflet/dist/leaflet.css";
 
@@ -82,17 +81,6 @@ const cityCoordinates: Record<string, { lat: number; lng: number }> = {
   Turim: { lat: 45.0703, lng: 7.6869 },
 };
 
-const transportIcons = {
-  plane: "✈️",
-  train: "🚂", 
-  car: "🚐",
-};
-
-const transportIconsReact = {
-  plane: Plane,
-  train: Train,
-  car: "🚐", // Motorhome emoji
-};
 
 const transportColors = {
   plane: "#3b82f6",
@@ -102,8 +90,6 @@ const transportColors = {
 
 // Criar ícones customizados para os marcadores
 const createCustomIcon = (transport: string, visited: boolean) => {
-  const color =
-    transportColors[transport as keyof typeof transportColors] || "#6b7280";
   const bgColor = visited ? "#10b981" : "#6b7280";
 
   return L.divIcon({

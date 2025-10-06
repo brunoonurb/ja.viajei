@@ -4,10 +4,10 @@ import { geocodeAddress, geocodeCity } from '@/lib/geocoding'
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const routeId = params.id
+    const { id: routeId } = await params
     const body = await request.json()
     const { 
       city, 
@@ -87,10 +87,10 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const routeId = params.id
+    const { id: routeId } = await params
 
     // Verificar se a rota existe
     const existingRoute = await prisma.travelRoute.findUnique({

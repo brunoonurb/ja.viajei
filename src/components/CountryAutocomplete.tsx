@@ -162,7 +162,7 @@ export default function CountryAutocomplete({
           className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg"
         >
           <div className="px-3 py-2 text-gray-500 text-center">
-            Nenhum país encontrado para "{value}"
+            Nenhum país encontrado para &quot;{value}&quot;
           </div>
         </div>
       )}

@@ -5,12 +5,10 @@ import { motion } from 'framer-motion'
 import { 
   MapPin, 
   Camera, 
-  Users, 
   Plane, 
   Train, 
   Car,
   Heart,
-  Globe,
   Plus,
   Edit3,
   Trash2,
@@ -418,49 +416,6 @@ export default function ViagemPage() {
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [selectedImage, imageViewerIndex, photos])
 
-  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (!file) return
-
-    const reader = new FileReader()
-    reader.onload = async (e) => {
-      const base64 = e.target?.result as string
-      const imageType = file.type
-
-      try {
-        const response = await fetch('/api/photos', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            title: file.name.split('.')[0],
-            description: '',
-            city: '',
-            country: '',
-            imageData: base64,
-            imageType,
-            takenAt: new Date().toISOString()
-          })
-        })
-
-        if (response.ok) {
-          const newPhoto = await response.json()
-          setPhotos([newPhoto, ...photos])
-          // Entrar automaticamente no modo de edição
-          setEditingPhoto(newPhoto.id)
-          setEditData({
-            title: newPhoto.title,
-            description: newPhoto.description || '',
-            city: newPhoto.city,
-            country: newPhoto.country,
-            takenAt: newPhoto.takenAt ? new Date(newPhoto.takenAt).toISOString().split('T')[0] : ''
-          })
-        }
-      } catch (error) {
-        console.error('Erro ao fazer upload:', error)
-      }
-    }
-    reader.readAsDataURL(file)
-  }
 
   const handlePhotoUploadByCity = async (file: File, city: string) => {
     try {
@@ -595,11 +550,6 @@ export default function ViagemPage() {
     }
   }
 
-  const transportIcons = {
-    plane: Plane,
-    train: Train,
-    car: Car
-  }
 
   if (loading) {
     return (

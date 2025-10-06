@@ -74,7 +74,7 @@ export function compressImage(
     img.onload = () => {
       try {
         // Redimensiona a imagem
-        const { width, height } = resizeImage(canvas, ctx, img, opts.maxWidth, opts.maxHeight)
+        resizeImage(canvas, ctx, img, opts.maxWidth, opts.maxHeight)
         
         // Converte para blob com qualidade especificada
         canvas.toBlob(

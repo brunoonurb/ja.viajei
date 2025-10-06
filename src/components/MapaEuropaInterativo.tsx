@@ -1,10 +1,9 @@
 'use client'
 
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useRef } from 'react'
 import { motion } from 'framer-motion'
 import Image from 'next/image'
 import { 
-  MapPin, 
   Camera, 
   Plane, 
   Train, 
@@ -12,8 +11,7 @@ import {
   X,
   ZoomIn,
   ZoomOut,
-  RotateCcw,
-  Maximize2
+  RotateCcw
 } from 'lucide-react'
 
 interface Photo {
@@ -96,7 +94,6 @@ export default function MapaEuropaInterativo({ routes, photos, isAuthenticated, 
   const [selectedCity, setSelectedCity] = useState<TravelRoute | null>(null)
   const [cityPhotos, setCityPhotos] = useState<Photo[]>([])
   const [showPhotoUpload, setShowPhotoUpload] = useState(false)
-  const [uploadFile, setUploadFile] = useState<File | null>(null)
   const [zoom, setZoom] = useState(1)
   const [position, setPosition] = useState({ x: 0, y: 0 })
   const [isDragging, setIsDragging] = useState(false)
@@ -115,10 +112,8 @@ export default function MapaEuropaInterativo({ routes, photos, isAuthenticated, 
   const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (file && selectedCity) {
-      setUploadFile(file)
       onPhotoUpload(file, selectedCity.city)
       setShowPhotoUpload(false)
-      setUploadFile(null)
       setTimeout(() => {
         setCityPhotos(getCityPhotos(selectedCity.city))
       }, 1000)

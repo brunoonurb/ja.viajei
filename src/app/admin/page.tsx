@@ -3,13 +3,11 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { 
-  Lock, 
   Eye, 
   EyeOff, 
   LogIn,
   ArrowLeft,
   Settings,
-  BarChart3,
   Camera,
   MapPin
 } from 'lucide-react'
@@ -21,13 +19,11 @@ export default function AdminPage() {
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState('')
   const router = useRouter()
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
-    setError('')
 
     try {
       const response = await fetch('/api/auth/signin', {
@@ -39,10 +35,10 @@ export default function AdminPage() {
       if (response.ok) {
         router.push('/admin/dashboard')
       } else {
-        setError('Credenciais inválidas')
+        console.error('Credenciais inválidas')
       }
     } catch (error) {
-      setError('Erro ao fazer login')
+      console.error('Erro ao fazer login')
     } finally {
       setIsLoading(false)
     }
@@ -112,11 +108,6 @@ export default function AdminPage() {
               </div>
             </div>
 
-            {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-                {error}
-              </div>
-            )}
 
             <button
               type="submit"
