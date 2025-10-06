@@ -11,7 +11,7 @@ import {
 } from "react-leaflet";
 import L from "leaflet";
 import { motion } from "framer-motion";
-import { Camera, Plane, Train, X, MapPin, Calendar, Plus } from "lucide-react";
+import { Camera, Plane, Train, X, MapPin, Calendar, Plus, Maximize2, Minimize2 } from "lucide-react";
 import Image from "next/image";
 import "leaflet/dist/leaflet.css";
 
@@ -83,6 +83,12 @@ const cityCoordinates: Record<string, { lat: number; lng: number }> = {
 };
 
 const transportIcons = {
+  plane: "✈️",
+  train: "🚂", 
+  car: "🚐",
+};
+
+const transportIconsReact = {
   plane: Plane,
   train: Train,
   car: "🚐", // Motorhome emoji
@@ -235,6 +241,7 @@ export default function MapaReal(props: MapaRealProps) {
   const [cityPhotos, setCityPhotos] = useState<Photo[]>([]);
   const [showPhotoUpload, setShowPhotoUpload] = useState(false);
   const [mapInstance, setMapInstance] = useState<L.Map | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   const getCityPhotos = (city: string) => {
     return Array.isArray(photos) ? photos.filter(
@@ -298,6 +305,38 @@ export default function MapaReal(props: MapaRealProps) {
     invalidateMapSize();
   }, [selectedCity]);
 
+  const toggleFullscreen = () => {
+    setIsFullscreen(!isFullscreen);
+    // Invalidar tamanho do mapa após mudança de tela cheia
+    setTimeout(() => {
+      invalidateMapSize();
+    }, 100);
+  };
+
+  const handleKeyDown = (event: KeyboardEvent) => {
+    if (event.key === 'Escape' && isFullscreen) {
+      setIsFullscreen(false);
+      setTimeout(() => {
+        invalidateMapSize();
+      }, 100);
+    }
+  };
+
+  useEffect(() => {
+    if (isFullscreen) {
+      document.addEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = 'unset';
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = 'unset';
+    };
+  }, [isFullscreen]);
+
   // Invalidar tamanho do mapa quando modal de upload é aberto/fechado
   useEffect(() => {
     invalidateMapSize();
@@ -340,16 +379,32 @@ export default function MapaReal(props: MapaRealProps) {
               local
             </p>
           </div>
-          {isAuthenticated && onAddCity && (
+          <div className="flex items-center space-x-2">
             <button
-              onClick={onAddCity}
-              className="bg-green-600 text-white px-3 py-2 md:px-4 rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-1 md:space-x-2 text-sm md:text-base"
+              onClick={toggleFullscreen}
+              className="bg-blue-600 text-white px-3 py-2 md:px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-1 md:space-x-2 text-sm md:text-base"
+              title={isFullscreen ? "Sair da tela cheia" : "Tela cheia"}
             >
+              {isFullscreen ? (
+                <Minimize2 className="h-4 w-4" />
+              ) : (
+                <Maximize2 className="h-4 w-4" />
+              )}
+              <span className="hidden md:inline">
+                {isFullscreen ? "Sair" : "Tela Cheia"}
+              </span>
+            </button>
+            {isAuthenticated && onAddCity && (
+              <button
+                onClick={onAddCity}
+                className="bg-green-600 text-white px-3 py-2 md:px-4 rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-1 md:space-x-2 text-sm md:text-base"
+              >
               <Plus className="h-4 w-4" />
               <span className="hidden sm:inline">Adicionar Cidade</span>
               <span className="sm:hidden">+</span>
             </button>
-          )}
+            )}
+          </div>
         </div>
       </div>
 
@@ -357,12 +412,12 @@ export default function MapaReal(props: MapaRealProps) {
         {/* Mapa Leaflet */}
         <div className="h-64 md:h-96 w-full">
           <MapContainer
-            center={[52.0, 10.0]} // Centro mais ao norte para focar na Europa
+            center={[52.0, -10.0]} // Centro mais ao norte para focar na Europa
             zoom={5} // Zoom inicial menor para mostrar mais da Europa
             style={{ height: "100%", width: "100%" }}
             scrollWheelZoom={true}
             zoomControl={true}
-            minZoom={3}
+            minZoom={2}
             maxZoom={50}
           >
             <TileLayer
@@ -541,6 +596,135 @@ export default function MapaReal(props: MapaRealProps) {
           })}
         </div>
       </div>
+
+      {/* Modal de Tela Cheia */}
+      {isFullscreen && (
+        <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-2 sm:p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full h-full max-w-7xl max-h-[95vh] flex flex-col overflow-hidden">
+            {/* Cabeçalho do Modal */}
+            <div className="p-3 sm:p-4 border-b border-gray-200 flex justify-between items-center flex-shrink-0">
+              <h3 className="text-lg sm:text-xl font-bold text-gray-800 truncate">
+                Mapa Interativo da Europa - Tela Cheia
+              </h3>
+              <button
+                onClick={toggleFullscreen}
+                className="bg-red-600 text-white px-3 py-2 sm:px-4 rounded-lg hover:bg-red-700 transition-colors flex items-center space-x-1 sm:space-x-2 text-sm sm:text-base flex-shrink-0"
+              >
+                <Minimize2 className="h-4 w-4" />
+                <span className="hidden sm:inline">Sair da Tela Cheia</span>
+                <span className="sm:hidden">Sair</span>
+              </button>
+            </div>
+            
+            {/* Mapa em Tela Cheia */}
+            <div className="flex-1 relative">
+              <MapContainer
+                center={[52.0, 10.0]}
+                zoom={5}
+                style={{ height: "100%", width: "100%" }}
+                scrollWheelZoom={true}
+                zoomControl={true}
+                minZoom={3}
+                maxZoom={50}
+              >
+                <TileLayer
+                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                />
+                
+                {/* Marcadores das cidades */}
+                {Array.isArray(routes) && routes.map((route) => {
+                  const coords = cityCoordinates[route.city];
+                  if (!coords) return null;
+                  
+                  const cityPhotosCount = getCityPhotos(route.city).length;
+                  
+                  return (
+                    <Marker
+                      key={route.id}
+                      position={[coords.lat, coords.lng]}
+                      icon={createCustomIcon(route.transport, route.visited)}
+                      eventHandlers={{
+                        click: () => handleCityClick(route),
+                      }}
+                    >
+                      <Popup>
+                        <div className="p-3 min-w-[250px]">
+                          <h3 className="font-bold text-lg mb-1">{route.city}</h3>
+                          <p className="text-gray-600 text-sm mb-3">
+                            {route.country}
+                          </p>
+
+                          <div className="flex items-center space-x-2 mb-3">
+                            <span className="text-xs bg-gray-100 px-2 py-1 rounded">
+                              {route.transport === "plane"
+                                ? "✈ Avião"
+                                : route.transport === "train"
+                                ? "🚂 Trem"
+                                : "🚐 Motorhome"}
+                            </span>
+                            {cityPhotosCount > 0 && (
+                              <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                                📸 {cityPhotosCount} fotos
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Botões de ação no popup */}
+                          <div className="space-y-2">
+                            <button
+                              onClick={() => {
+                                const countryPhotos = getCountryPhotos(
+                                  route.country
+                                );
+                                if (countryPhotos.length > 0) {
+                                  setCityPhotos(countryPhotos);
+                                  onImageClick?.(countryPhotos[0], countryPhotos);
+                                }
+                              }}
+                              className="w-full flex items-center justify-center space-x-2 bg-blue-500 text-white px-3 py-2 rounded-lg hover:bg-blue-600 transition-colors text-sm font-medium"
+                            >
+                              <Camera className="h-4 w-4" />
+                              <span>Ver Fotos ({cityPhotosCount})</span>
+                            </button>
+
+                            {isAuthenticated && (
+                              <label className="w-full flex items-center justify-center space-x-2 bg-green-500 text-white px-3 py-2 rounded-lg hover:bg-green-600 transition-colors cursor-pointer text-sm font-medium">
+                                <Camera className="h-4 w-4" />
+                                <span>Adicionar Foto</span>
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  onChange={handlePhotoUpload}
+                                  className="hidden"
+                                />
+                              </label>
+                            )}
+                          </div>
+                        </div>
+                      </Popup>
+                    </Marker>
+                  );
+                })}
+                
+                {/* Linha conectando as cidades */}
+                {Array.isArray(routes) && routes.length > 1 && (
+                  <Polyline
+                    positions={routes
+                      .map(route => cityCoordinates[route.city])
+                      .filter(Boolean)
+                      .map(coords => [coords.lat, coords.lng] as [number, number])
+                    }
+                    color="#3b82f6"
+                    weight={3}
+                    opacity={0.7}
+                  />
+                )}
+              </MapContainer>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

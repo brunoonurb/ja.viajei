@@ -29,6 +29,7 @@ import Link from 'next/link'
 import MapaWrapper from '@/components/MapaWrapper'
 import CountryAutocomplete from '@/components/CountryAutocomplete'
 import CityAutocomplete from '@/components/CityAutocomplete'
+import SocialMedia from '@/components/SocialMedia'
 import { compressPhotoForTravel } from '@/lib/imageCompression'
 
 interface Photo {
@@ -633,6 +634,11 @@ export default function ViagemPage() {
               </div>
             </Link>
             <div className="flex items-center space-x-4">
+              {/* Redes Sociais */}
+              <div>
+                <SocialMedia size="sm" variant="compact" />
+              </div>
+              
               <Link href="/" className="btn-secondary">
                 Voltar
               </Link>
@@ -1374,12 +1380,21 @@ export default function ViagemPage() {
       {/* Footer */}
       <footer className="bg-gray-800 text-white py-12 mt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <div className="flex items-center justify-center space-x-3 mb-4">
+            <div className="flex items-center justify-center space-x-3 mb-6">
               <Heart className="h-6 w-6 text-pink-500" />
               <span className="text-xl font-bold">Bruno & Jessica • Bianca & Leonardo & Theo (5 meses)</span>
             </div>
+            
+            {/* Redes Sociais */}
+            <div className="mb-6">
+              <SocialMedia size="md" variant="default" showLabels={true} />
+            </div>
+            
             <p className="text-gray-400">
               Nossa aventura europeia de 2024 - Dois casais, um bebê, uma paixão por viajar!
+            </p>
+            <p className="text-gray-500 text-sm mt-2">
+              Acompanhe nossa jornada em todas as redes sociais
             </p>
         </div>
       </footer>
@@ -1511,9 +1526,18 @@ export default function ViagemPage() {
 
       <footer className="bg-gray-800 text-white py-12 mt-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h3 className="text-2xl font-bold mb-4">Nossa Viagem pela Europa</h3>
+            <h3 className="text-2xl font-bold mb-6">Nossa Viagem pela Europa</h3>
+            
+            {/* Redes Sociais */}
+            <div className="mb-6">
+              <SocialMedia size="md" variant="default" showLabels={true} />
+            </div>
+            
             <p className="text-gray-400">
               Nossa aventura europeia de 2024 - Dois casais, um bebê, uma paixão por viajar!
+            </p>
+            <p className="text-gray-500 text-sm mt-2">
+              Acompanhe nossa jornada em todas as redes sociais
             </p>
         </div>
       </footer>

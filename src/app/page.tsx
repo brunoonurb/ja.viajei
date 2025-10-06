@@ -17,6 +17,7 @@ import {
   Star,
   Lock
 } from 'lucide-react'
+import SocialMedia from '@/components/SocialMedia'
 
 interface Photo {
   id: string
@@ -133,6 +134,11 @@ export default function Home() {
               </div>
             </div>
             <div className="flex items-center space-x-2 sm:space-x-4">
+              {/* Redes Sociais */}
+              <div>
+                <SocialMedia size="sm" variant="compact" />
+              </div>
+              
               <Link
                 href="/viagem"
                 className="btn-primary flex items-center space-x-1 sm:space-x-2 text-sm sm:text-base px-2 sm:px-4 py-2"
@@ -375,12 +381,21 @@ export default function Home() {
       {/* Footer */}
       <footer className="bg-gray-800 text-white py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <div className="flex items-center justify-center space-x-3 mb-4">
+          <div className="flex items-center justify-center space-x-3 mb-6">
             <Heart className="h-6 w-6 text-pink-500" />
             <span className="text-xl font-bold">Bruno & Jessica • Bianca & Leonardo & Theo (5 meses)</span>
           </div>
+          
+          {/* Redes Sociais */}
+          <div className="mb-6">
+            <SocialMedia size="md" variant="default" showLabels={true} />
+          </div>
+          
           <p className="text-gray-400">
             Nossa aventura europeia de 2024 - Dois casais, um bebê, uma paixão por viajar!
+          </p>
+          <p className="text-gray-500 text-sm mt-2">
+            Acompanhe nossa jornada em todas as redes sociais
           </p>
         </div>
       </footer>
