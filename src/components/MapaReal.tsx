@@ -416,6 +416,7 @@ export default function MapaReal(props: MapaRealProps) {
             {/* Linhas da rota */}
             <RouteLines routes={routes} />
 
+
             {/* Marcadores das cidades */}
             {Array.isArray(routes) ? routes.map((route) => {
               // Priorizar coordenadas do banco de dados
@@ -620,11 +621,20 @@ export default function MapaReal(props: MapaRealProps) {
                 
                 {/* Marcadores das cidades */}
                 {Array.isArray(routes) && routes.map((route) => {
-                  const coords = cityCoordinates[route.city];
-                  if (!coords) return null;
-                  
-                  const cityPhotosCount = getCityPhotos(route.city).length;
-                  
+                 
+                    // Priorizar coordenadas do banco de dados
+                    let coords = null;
+                    if (route.latitude && route.longitude) {
+                      coords = { lat: route.latitude, lng: route.longitude };
+                    } else {
+                      // Fallback para mapeamento estático
+                      coords = cityCoordinates[route.city];
+                    }
+                    
+                    if (!coords) return null;
+      
+                    // const countryPhotosCount = getCountryPhotos(route.country).length; //foto por pais
+                    const cityPhotosCount = getCityPhotos(route.city).length;
                   return (
                     <Marker
                       key={route.id}
@@ -694,18 +704,8 @@ export default function MapaReal(props: MapaRealProps) {
                 })}
                 
                 {/* Linha conectando as cidades */}
-                {Array.isArray(routes) && routes.length > 1 && (
-                  <Polyline
-                    positions={routes
-                      .map(route => cityCoordinates[route.city])
-                      .filter(Boolean)
-                      .map(coords => [coords.lat, coords.lng] as [number, number])
-                    }
-                    color="#3b82f6"
-                    weight={3}
-                    opacity={0.7}
-                  />
-                )}
+                <RouteLines routes={routes} />
+             
               </MapContainer>
             </div>
           </div>
